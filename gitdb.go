@@ -1,18 +1,24 @@
 package main
 
 import (
+	"container/list"
 	"flag"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"path/filepath"
 	"runtime"
+	"time"
 )
 
 var (
 	DB   *repoDb
 	help *bool
+	root *string
+)
+
+const (
+	gitdir = ".git"
 )
 
 func init() {
@@ -20,63 +26,52 @@ func init() {
 
 	//flags
 	help = flag.Bool("h", false, "show help")
+	root = flag.String("root", "/", "set the root directory for searching")
 }
 
 type repoDb struct {
-	repos []*gitRepo
+	repos *list.List
 }
 
 func (db *repoDb) GetRepo(path string) *gitRepo {
-	for _, r := range db.repos {
-		if r.match(path) {
+	for e := db.repos.Front(); e != nil; e = e.Next() {
+		if r := e.Value.(*gitRepo); r.match(path) {
 			return r
 		}
 	}
-	db.addRepo(path)
 	return nil
 }
 
-func (db *repoDb) addRepo(path string) {
-	//find the repo root directory
-	dir := path
-	const gitdir = ".git"
-	findGit := func(dir string) bool {
-		f, err := os.Open(dir)
-		if err != nil {
-			log.Println("addRepo:", err)
-			return false
-		}
-		defer f.Close()
-		names, err := f.Readdirnames(-1)
-		if err != nil {
-			log.Println("addRepo:", err)
-			return false
-		}
-		for _, name := range names {
-			if name == gitdir {
-				return true
-			}
-		}
-		return false
-	}
-
+func (db *repoDb) loop(pathC <-chan string) {
+	timer := time.NewTicker(1 * time.Second)
 	for {
-		if dir == "." || dir == "/" {
-			//can't find repo with path
-			return
+		select {
+		case path := <-pathC:
+			db.repos.PushBack(NewRepo(path))
+		case <-timer.C:
+			db.update()
 		}
-		if findGit(dir) {
-			break
-		}
-		dir = filepath.Dir(dir)
 	}
-	db.repos = append(db.repos, NewRepo(dir))
 }
 
-func NewRepoDb() *repoDb {
-	db := &repoDb{
-		repos: make([]*gitRepo, 0, 10),
+func (db *repoDb) update() {
+	cleanup := []*list.Element{}
+	for e := db.repos.Front(); e != nil; e = e.Next() {
+		if r := e.Value.(*gitRepo); r.exist() {
+			r.ExitC <- struct{}{}
+			cleanup = append(cleanup, e)
+		}
 	}
+	for _, e := range cleanup {
+		db.repos.Remove(e)
+	}
+}
+
+func NewRepoDb(pathC <-chan string) *repoDb {
+	db := &repoDb{
+		repos: list.New(),
+	}
+	go db.loop(pathC)
 	return db
 }
 
@@ -88,10 +83,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	DB = NewRepoDb() //frome root directory
+	DB = NewRepoDb(NewSpider(*root))
 	InitServer()
 
-	fmt
 	err := http.ListenAndServe(":54321", nil)
 	if err != nil {
 		log.Fatalln(err)

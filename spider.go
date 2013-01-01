@@ -14,19 +14,16 @@ type spiderDb struct {
 }
 
 func NewSpider(base string) <-chan string {
-	if base == "" {
-		base = "/"
-	}
 	db := &spiderDb{
 		base:   base,
 		output: make(chan string),
 		log:    make(map[string]struct{}),
 	}
-	go spiderLoop(db)
+	go db.loop()
 	return db.output
 }
 
-func spiderLoop(db *spiderDb) {
+func (db *spiderDb) loop() {
 	for {
 		err := filepath.Walk(db.base,
 			func(path string, info os.FileInfo, err error) error {
@@ -36,8 +33,8 @@ func spiderLoop(db *spiderDb) {
 				if !info.IsDir() {
 					return nil
 				}
-				if info.Name() == ".git" {
-					addGitRepo(filepath.Dir(path), db)
+				if info.Name() == gitdir {
+					db.addGitRepo(filepath.Dir(path))
 					return filepath.SkipDir
 				}
 				return nil
@@ -45,11 +42,11 @@ func spiderLoop(db *spiderDb) {
 		if err != nil {
 			log.Println(err)
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(30 * time.Second)
 	}
 }
 
-func addGitRepo(path string, db *spiderDb) {
+func (db *spiderDb) addGitRepo(path string) {
 	if _, found := db.log[path]; found {
 		return
 	}
