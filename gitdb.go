@@ -11,6 +11,7 @@ func main() {
 	DB = NewRepoDb(NewSpider("")) //frome root directory
 	NewServer()
 
+	fmt
 	err := http.ListenAndServe(":54321", nil)
 	if err != nil {
 		log.Fatalln(err)
