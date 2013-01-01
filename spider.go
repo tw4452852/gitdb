@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type spiderDb struct {
@@ -44,6 +45,7 @@ func spiderLoop(db *spiderDb) {
 		if err != nil {
 			log.Println(err)
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
 
