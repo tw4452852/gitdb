@@ -22,7 +22,7 @@ func (s *GitServer) Result(request *Requst, reply *string) error {
 	return nil
 }
 
-func NewServer() {
+func InitServer() {
 	server := &GitServer{}
 	rpc.Register(server)
 	rpc.HandleHTTP()

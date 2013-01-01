@@ -75,7 +75,6 @@ func (r *gitRepo) loop() {
 		select {
 		case e := <-r.addC:
 			r.entries = append(r.entries, e)
-			log.Printf("repo(%q) add cmdEntry: (%v)\n", r.root, e)
 		case req := <-r.reqC:
 			found := false
 			for _, e := range r.entries {
@@ -94,11 +93,9 @@ func (r *gitRepo) loop() {
 			for i, entry := range r.entries {
 				if err := entry.update(r.root); err != nil {
 					cleanup = append(cleanup, i)
-					log.Printf("repo(%q) update cmdEntry(%v) failed: %s\n", r.root, entry, err)
 				}
 			}
 			for _, i := range cleanup {
-				log.Printf("repo(%q) delete cmdEntry(%v)\n", r.root, r.entries[i])
 				r.entries = append(r.entries[:i], r.entries[i+1:]...)
 			}
 		}

@@ -11,16 +11,14 @@ import (
 )
 
 var (
-	DB      *repoDb
-	rootDir *string
-	help    *bool
+	DB   *repoDb
+	help *bool
 )
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	//flags
-	rootDir = flag.String("root", "/", "base directory where spider begin with")
 	help = flag.Bool("h", false, "show help")
 }
 
@@ -69,7 +67,7 @@ FINDROOT:
 	db.repos = append(db.repos, NewRepo(dir))
 }
 
-func NewRepoDb(pathC <-chan string) *repoDb {
+func NewRepoDb() *repoDb {
 	db := &repoDb{
 		repos: make([]*gitRepo, 0, 10),
 	}
@@ -84,8 +82,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	DB = NewRepoDb(NewSpider(*rootDir)) //frome root directory
-	NewServer()
+	DB = NewRepoDb() //frome root directory
+	InitServer()
 
 	err := http.ListenAndServe(":54321", nil)
 	if err != nil {
