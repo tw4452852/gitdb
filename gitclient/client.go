@@ -25,5 +25,5 @@ func main() {
 	if err != nil {
 		log.Fatal("call:", err)
 	}
-	fmt.Println("result:", reply)
+	fmt.Print(reply)
 }

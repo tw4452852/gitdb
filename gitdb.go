@@ -9,8 +9,9 @@ var DB *repoDb
 
 func main() {
 	DB = NewRepoDb(NewSpider("")) //frome root directory
+	NewServer()
 
-	err := http.ListenAndServe("127.0.0.1:54321", nil)
+	err := http.ListenAndServe(":54321", nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
