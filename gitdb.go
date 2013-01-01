@@ -40,28 +40,34 @@ func (db *repoDb) addRepo(path string) {
 	//find the repo root directory
 	dir := path
 	const gitdir = ".git"
-FINDROOT:
-	for {
-		if dir == "." {
-			log.Printf("addRepo: can't find repo root directory with path(%q)\n", path)
-			return
-		}
+	findGit := func(dir string) bool {
 		f, err := os.Open(dir)
 		if err != nil {
 			log.Println("addRepo:", err)
-			return
+			return false
 		}
+		defer f.Close()
 		names, err := f.Readdirnames(-1)
 		if err != nil {
 			log.Println("addRepo:", err)
-			return
+			return false
 		}
 		for _, name := range names {
 			if name == gitdir {
-				break FINDROOT
+				return true
 			}
 		}
-		f.Close()
+		return false
+	}
+
+	for {
+		if dir == "." || dir == "/" {
+			//can't find repo with path
+			return
+		}
+		if findGit(dir) {
+			break
+		}
 		dir = filepath.Dir(dir)
 	}
 	db.repos = append(db.repos, NewRepo(dir))
