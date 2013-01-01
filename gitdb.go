@@ -91,6 +91,7 @@ func main() {
 	DB = NewRepoDb() //frome root directory
 	InitServer()
 
+	fmt
 	err := http.ListenAndServe(":54321", nil)
 	if err != nil {
 		log.Fatalln(err)
