@@ -1,13 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"net/http"
 )
 
-func main() {
-	pathC := NewSpider("") //frome root directory
+var DB *repoDb
 
-	for path := range pathC {
-		fmt.Printf("get a repo, path is %q\n", path)
+func main() {
+	DB = NewRepoDb(NewSpider("")) //frome root directory
+
+	err := http.ListenAndServe("127.0.0.1:54321", nil)
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
